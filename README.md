@@ -10,6 +10,7 @@ A lightweight Elixir library for creating and verifying [ALTCHA](https://altcha.
 
 - [`examples/server/`](/examples/server/)
 - [`examples/argon2.exs`](/examples/argon2.exs)
+- [`examples/server/ash`](/examples/server/ash)
 
 ## Installation
 
@@ -19,6 +20,88 @@ defp deps do
     {:altcha, "~> 2.0"}
   ]
 end
+```
+
+**Install ALTCHA**
+
+   ```bash
+   mix ALTCHA.install #  --version 3.2.1
+   # ... or: npm install altcha --prefix assets
+   ```
+
+3. **Add `altcha.install` to `assets.setup` in `mix.exs`** (if using Mix installer):
+
+   ```elixir
+   "assets.setup": ["altcha.install", ... ]
+   ```
+
+4. **Register JavaScript hook (optional if using liveview)** in your `app.js`:
+
+   ```javascript
+   import altcha;
+   
+   let Hooks = {};
+   
+   Hooks.AltchaHook = {
+    mounted() {
+    const widget = this.el.querySelector("altcha-widget");
+    const input = this.el.querySelector("#altcha-token-input");
+
+    if (widget && input) {
+      widget.addEventListener("statechange", (event) => {
+        const { state, payload } = event.detail || {};
+        console.log(`[Altcha] State: ${state}, Payload:`, payload);
+
+        if (state === "verified" && payload) {
+          input.value = payload;
+        } else if (state === "error") {
+          input.value = "";
+        }
+      });
+    }
+    }
+    };
+
+   const liveSocket = new LiveSocket('/live', Socket, {
+     hooks: Hooks,
+   });
+   ```
+
+5. **add to endpoint.ex**
+```elixir
+plug :serve_altcha_challenge
+plug Web.Router
+
+def serve_altcha_challenge(%Plug.Conn{method: "GET", path_info: ["challenge"]} = conn, _opts) do
+hmac_secret = System.get_env("ALTCHA_HMAC_SECRET", "change-me-in-production")
+hmac_key_secret = System.get_env("ALTCHA_HMAC_KEY_SECRET", "change-me-in-production-2")
+
+    counter = Enum.random(5_000..10_000)
+
+    challenge =
+      Altcha.V2.create_challenge(%Altcha.V2.CreateChallengeOptions{
+        algorithm: "PBKDF2/SHA-256",
+        cost: 5_000,
+        counter: counter,
+        expires_at: DateTime.to_unix(DateTime.utc_now(), :second) + 600,
+        hmac_signature_secret: hmac_secret,
+        hmac_key_signature_secret: hmac_key_secret
+      })
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, Jason.encode!(challenge))
+    |> halt()
+end
+
+# Fallthrough clause so other routes like /register pass through safely to the router
+def serve_altcha_challenge(conn, _opts), do: conn
+```
+or use the example router
+
+```elixir
+plug Server.Router
+plug Web.Router
 ```
 
 ## Versions
@@ -148,7 +231,6 @@ Altcha.V1.verify_solution(params["altcha"], "your-secret")
 # Verify form fields hash
 Altcha.V1.verify_fields_hash(form_data, ["email", "message"], fields_hash, :sha256)
 ```
-
 ---
 
 ## License
