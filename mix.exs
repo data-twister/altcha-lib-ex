@@ -36,7 +36,9 @@ defmodule Altcha.MixProject do
 
   # Run "mix help compile.app" to learn about applications.
   def application do
-    []
+    [
+      extra_applications: [:logger, :inets, :ssl, :crypto]
+    ]
   end
 
   # Run "mix help deps" to learn about dependencies.
