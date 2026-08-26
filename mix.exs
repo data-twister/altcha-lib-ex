@@ -12,7 +12,10 @@ defmodule Altcha.MixProject do
       package: package(),
       deps: deps(),
       name: "Altcha",
-      source_url: "https://github.com/altcha-org/altcha-lib-ex"
+      source_url: "https://github.com/altcha-org/altcha-lib-ex",
+      altcha: [
+        version: "3.2.2"
+      ]
     ]
   end
 

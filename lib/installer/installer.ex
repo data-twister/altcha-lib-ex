@@ -6,7 +6,7 @@ defmodule Altcha.Installer do
 
   alias Altcha.Installer.NPMRegistry
 
-  @default_version Mix.Project.config()[:altcha][:default_version]
+  @default_version Mix.Project.config()[:altcha][:version]
 
   @doc """
   Installs Altcha packages into node_modules/altcha.
