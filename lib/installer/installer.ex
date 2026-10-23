@@ -8,7 +8,7 @@ defmodule Altcha.Installer do
 
   # Fix: Safely fetch configuration parameters while providing an explicit default fallback
   @config Mix.Project.config()[:altcha] || []
-  @default_version (Keyword.get(@config, :version) || "0.8.1")
+  @default_version Keyword.get(@config, :version) || "0.8.1"
 
   @doc """
   Installs Altcha packages into node_modules/altcha.

@@ -43,10 +43,12 @@ defmodule Altcha.Installer.NPMRegistry do
 
           # 2. Download tarball
           Logger.info("Downloading #{package_name} v#{version}...")
+
           case download_file(tarball_url, tarball_path) do
             :ok ->
               # 3. Extract tarball
               File.mkdir_p!(extract_path)
+
               case extract_tarball(tarball_path, extract_path) do
                 :ok ->
                   # NPM packages usually extract into a "package" folder
@@ -90,25 +92,24 @@ defmodule Altcha.Installer.NPMRegistry do
     _ = Application.ensure_all_started(:ssl)
   end
 
-defp fetch_json(url) do
-  case :httpc.request(:get, {String.to_charlist(url), []}, http_options(), body_format: :binary) do
-    # 🚀 FIX: Pass [keys: :strings] explicitly to guarantee string keys match get_in/2
-    {:ok, {{_, 200, _}, _, body}} -> 
-      {:ok, Jason.decode!(body, keys: :strings)}
-      
-    {:ok, {{_, status, _}, _, _}} -> 
-      {:error, "HTTP request failed with status #{status}"}
-      
-    {:error, reason} -> 
-      {:error, reason}
-  end
-end
+  defp fetch_json(url) do
+    case :httpc.request(:get, {String.to_charlist(url), []}, http_options(), body_format: :binary) do
+      # 🚀 FIX: Pass [keys: :strings] explicitly to guarantee string keys match get_in/2
+      {:ok, {{_, 200, _}, _, body}} ->
+        {:ok, Jason.decode!(body, keys: :strings)}
 
+      {:ok, {{_, status, _}, _, _}} ->
+        {:error, "HTTP request failed with status #{status}"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
   defp download_file(url, path) do
     # Fix 2: Changed stream configuration to use correct Erlang keyword tuple syntax
     request_opts = [stream: String.to_charlist(path)]
-    
+
     case :httpc.request(:get, {String.to_charlist(url), []}, http_options(), request_opts) do
       {:ok, :saved_to_file} -> :ok
       {:ok, {{_, 200, _}, _, _}} -> :ok
@@ -133,9 +134,9 @@ end
 
   defp extract_tarball(tarball_path, dest_dir) do
     case :erl_tar.extract(String.to_charlist(tarball_path), [
-      :compressed,
-      {:cwd, String.to_charlist(dest_dir)}
-    ]) do
+           :compressed,
+           {:cwd, String.to_charlist(dest_dir)}
+         ]) do
       :ok -> :ok
       {:error, reason} -> {:error, reason}
     end
